@@ -1,0 +1,11 @@
+{
+	"name": "randity",
+	"package": "me.cyanide.randity",
+	"author": "cyanide",
+	"icon": "icon.png",
+	"executor": "main.js",
+	"hasWindow": true,
+	"startOptions": {
+		"windowMode": "normal"
+	}
+}

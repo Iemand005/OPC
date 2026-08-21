@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<style>
+			body {
+				margin: 30px;
+				font-family: "Tahoma";
+			}
+			hr {
+				margin: 50px;
+			}
+			#welcome {
+				word-wrap: break-word;
+			}
+			#lengthinput {
+				width: 250px;
+			}
+			#output {
+				word-wrap: break-word;
+				font-size: 15px;
+			}
+			#monospace {
+				font-family: 'Consolas', monospace;
+				background-color: #D8D8D8;
+				border-style: solid;
+				border-radius: 5px;
+				border-width: 2px;
+				border-color: #C8C8C8;
+				color: #006810;
+			}
+			#copyright {
+				color: #8F8F8F;
+				text-align: center;
+			}
+		</style>
+	</head>
+	<body>
+		<div id="welcome">
+			<h1>
+				Welcome to
+				<span id="monospace">randity</span>
+				!
+			</h1>
+			<p>
+				To get started, enter a number in the text input and press the 'Enter' button. <br>
+				Then, watch the magic happen!
+			</p>
+		</div>
+		<table style="padding: 5px;">
+			<tr>
+				<td>
+					<input id="lengthinput" placeholder="Enter length (output will be n letters long)">
+				</td>
+				<td>
+					<button id="submit">Enter</button>
+				</td>
+			</tr>
+		</table>
+		<p id="output"></p>
+		<hr>
+		<footer style="height: 50px;">
+			<p id="copyright">Copyright 2026 by cyanide. All rights reserved >:3</p>
+		</footer>
+	</body>
+</html>
