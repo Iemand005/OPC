@@ -1,0 +1,14 @@
+{
+  "name": "Terminal",
+  "author": "Flexan.NET",
+  "icon": "terminal.png",
+  "executor": "start.js",
+  "hasWindow": true,
+  "startOptions": {
+    "windowMode": "normal",
+    "windowWidth": 700,
+    "windowHeight": 400,
+    "windowX": 350,
+    "windowY": 170
+  }
+}

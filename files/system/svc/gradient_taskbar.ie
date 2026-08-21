@@ -1,0 +1,18 @@
+$(IE.OPC);
+IE_RUN:
+(function() {
+  if (os.services.started.includes("HIDDEN_TASKBAR")) {
+    os.notifications.show("Gradient Taskbar", "Gradient Taskbar will only work if you run it before you run Hidden Taskbar.", (n) => n.dismiss(), null);
+    return;
+  }
+  var styles = document.createElement("style");
+  styles.innerText = `.taskbar {
+    background: linear-gradient(79deg, rgba(58,58,58,0.77) 0%, rgba(58,58,58,0.9) 50%, rgba(58,58,58,0.77) 100%);
+    /*transition: 200ms background-color;*/
+  }
+  
+  /*.taskbar:hover {
+    background-color: rgb(58, 58, 58);
+  }*/`;
+  document.head.appendChild(styles);
+})();

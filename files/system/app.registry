@@ -1,0 +1,9 @@
+; Versions:
+; - OE0: Operational Executable v0
+; - IE0: Intermission Executable v0
+me.flexan.terminal	Terminal	OE0
+me.flexan.browz	Browz	OE0
+me.flexan.extenter	Extenter	OE0
+me.flexan.browzfiles	Browz Files	OE0
+me.flexan.access	OPC Access Dialog	OE0	NOMANAGE	NORUN
+me.flexan.lvos-connector	LVOS Connector	OE0	NOMANAGE	NORUN

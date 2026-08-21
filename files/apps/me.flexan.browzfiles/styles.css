@@ -1,0 +1,45 @@
+body {
+	background-color: rgb(40, 40, 40);
+	font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+	font-size: 20px;
+	margin: 0;
+	color: rgb(93, 114, 182);
+}
+
+.item {
+	margin: 0;
+	border: 1px solid rgb(40, 40, 40);
+	padding: 5px 10px;
+	background-color: rgb(45, 45, 45);
+	cursor: pointer;
+	user-select: none;
+}
+
+.item:hover {
+	background-color: rgb(50, 50, 50);
+}
+
+.focused {
+	background-color: rgb(80, 80, 80);
+}
+
+.folder {
+	color: rgb(172, 129, 105);
+}
+
+#upload {
+	display: none;
+}
+
+h4 {
+	width: calc(100% - 20px);
+	text-align: center;
+	padding: 20px;
+	box-sizing: border-box;
+	text-align: center;
+	border-radius: 12px;
+	border: 2px solid rgb(50, 50, 50);
+	margin: 10px 10px;
+	cursor: pointer;
+	color: rgb(100, 100, 100);
+}

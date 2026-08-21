@@ -1,0 +1,40 @@
+$(IE.OPC);
+IE_RUN:
+var styles = document.createElement("style");
+styles.innerText = `:root {
+  --taskbar-height: 78px;
+}
+
+.taskbar {
+  border-radius: 16px;
+  width: 30%;
+  height: 20px;
+  overflow: hidden;
+  left: 50%;
+  margin: 10px 10px 25px 0;
+  transform: translateX(-50%);
+  text-align: center;
+
+  transition-property: width, height, margin, background-color;
+  transition-duration: 500ms;
+}
+
+.taskbar:hover {
+  width: calc(100% - 40px);
+  height: calc(var(--taskbar-height) - 20px);
+  margin: 10px 10px 10px 0;
+  
+  transition-property: width, height, margin, background-color;
+  transition-duration: 500ms;
+}
+
+.taskbarItem {
+  top: 20px;
+  transition: 200ms top;
+}
+
+.taskbar:hover .taskbarItem {
+  top: 6px;
+  transition: 200ms top;
+}`;
+document.head.appendChild(styles);

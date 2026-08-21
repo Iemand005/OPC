@@ -1,0 +1,17 @@
+$(IE.OPC);
+IE_RUN:
+(async function() {
+  if (!os.fs.exists("/cfg/background")[1]) {
+    os.fs.createDirs("/cfg/background");
+  } else if (os.fs.isDir("/cfg/background")[1]) {
+    var files = os.fs.getFiles("/cfg/background")[1];
+    if (files.length > 0) {
+      var img = (await os.fs.readBlob("/cfg/background/" + files[0]))[1];
+      document.body.style.background = "url('" + img + "')";
+      document.body.style.backgroundSize = "cover";
+      document.body.style.backgroundRepeat = "no-repeat";
+      document.body.style.backgroundAttachment = "fixed";
+      document.body.style.backgroundPosition = "center";
+    }
+  }
+})();

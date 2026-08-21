@@ -1,0 +1,13 @@
+{
+  "name": "LVOS Connector",
+  "author": "Flexan",
+  "icon": "icon.png",
+  "executor": "start.js",
+  "hasWindow": true,
+  "startOptions": {
+    "windowMode": "normal",
+    "windowWidth": 400,
+    "windowHeight": 200
+  },
+  "lvos": true
+}

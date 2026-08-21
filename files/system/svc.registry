@@ -1,0 +1,7 @@
+; Example service:
+/system/svc/delete.ie	Wipe System	WIPE_SYSTEM	OPC
+/system/svc/rounded_windows.ie	Rounded Corners	ROUNDED_CORNERS	OPC
+/system/svc/background.ie	Desktop Background	DESKTOP_BACKGROUND	OPC
+/system/svc/gradient_taskbar.ie	Gradient Taskbar	GRADIENT_TASKBAR	OPC
+/system/svc/hidden_taskbar.ie	Hidden Taskbar	HIDDEN_TASKBAR	OPC
+/system/svc/lvos_desktop.ie	LVOS Desktop	LVOS_DESKTOP	OPC

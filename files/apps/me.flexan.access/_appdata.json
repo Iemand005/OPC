@@ -1,0 +1,12 @@
+{
+  "name": "Request Access",
+  "author": "Flexan.NET",
+  "icon": "icon.png",
+  "executor": "start.js",
+  "hasWindow": true,
+  "startOptions": {
+    "windowMode": "normal",
+    "windowWidth": 400,
+    "windowHeight": 200
+  }
+}

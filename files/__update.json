@@ -1,0 +1,57 @@
+{
+  "opc-v0-1.0.0": {
+    "install": {
+      "files": [
+        "/system/app.registry",
+        "/system/svc.registry",
+        "/system/machine/taskbar",
+        "/cfg/startup/services"
+      ],
+      "directories": [
+        "/cfg/background"
+      ]
+    },
+    "update": {
+      "files": [
+        "/system/svc/delete.ie",
+        "/system/svc/rounded_windows.ie",
+        "/system/svc/background.ie",
+        "/system/svc/gradient_taskbar.ie",
+        "/system/svc/hidden_taskbar.ie",
+        "/system/svc/lvos_desktop.ie",
+        "/apps/me.flexan.terminal/_appdata.json",
+        "/apps/me.flexan.terminal/start.js",
+        "/apps/me.flexan.terminal/terminal.png",
+        "/apps/me.flexan.terminal/styles.css",
+        "/apps/me.flexan.browz/_appdata.json",
+        "/apps/me.flexan.browz/icon.png",
+        "/apps/me.flexan.browz/main.js",
+        "/apps/me.flexan.browz/browser.html",
+        "/apps/me.flexan.browz/browser.css",
+        "/apps/me.flexan.browz/search.png",
+        "/apps/me.flexan.browz/settings.png",
+        "/apps/me.flexan.extenter/_appdata.json",
+        "/apps/me.flexan.extenter/icon.png",
+        "/apps/me.flexan.extenter/main.js",
+        "/apps/me.flexan.extenter/interface.html",
+        "/apps/me.flexan.extenter/styles.css",
+        "/apps/me.flexan.extenter/warning.png",
+        "/apps/me.flexan.browzfiles/_appdata.json",
+        "/apps/me.flexan.browzfiles/main.js",
+        "/apps/me.flexan.browzfiles/layout.html",
+        "/apps/me.flexan.browzfiles/styles.css",
+        "/apps/me.flexan.browzfiles/icon.png",
+        "/apps/me.flexan.access/_appdata.json",
+        "/apps/me.flexan.access/start.js",
+        "/apps/me.flexan.access/icon.png",
+        "/apps/me.flexan.access/styles.css",
+        "/apps/me.flexan.lvos-connector/_appdata.json",
+        "/apps/me.flexan.lvos-connector/start.js",
+        "/apps/me.flexan.lvos-connector/icon.png",
+        "/apps/me.flexan.lvos-connector/styles.css"
+      ]
+    },
+    "version": "opc-v0-1.0.0",
+    "nextVersion": "unknown"
+  }
+}

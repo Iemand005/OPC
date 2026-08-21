@@ -1,0 +1,26 @@
+$(IE.OPC);
+IE_RUN:
+if (window.top !== window) {
+  const ready = [];
+
+  function newScript(name) {
+    const promise = new Promise((resolve) => {
+      const script = document.createElement("script");
+      script.src = "./" + name;
+      script.onload = resolve;
+      document.head.appendChild(script);
+    });
+    ready.push(promise);
+  }
+
+  newScript("lvos/messenger.js");
+  newScript("lvos/opc-os-patch.js");
+
+  (async function() {
+    await Promise.all(ready);
+
+    Messenger.onHostBeingLVOS(() => {
+      os.startProcess("me.flexan.lvos-connector", [], {id: "system,"});
+    });
+  })();
+}

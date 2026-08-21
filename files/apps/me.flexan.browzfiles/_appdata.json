@@ -1,0 +1,11 @@
+{
+	"name": "Browz Files",
+	"package": "me.flexan.browzfiles",
+	"author": "Flexan.NET",
+	"icon": "icon.png",
+	"executor": "main.js",
+	"hasWindow": true,
+	"startOptions": {
+		"windowMode": "normal"
+	}
+}

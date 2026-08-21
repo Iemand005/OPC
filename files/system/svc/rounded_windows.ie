@@ -1,0 +1,5 @@
+$(IE.OPC);
+IE_RUN:
+var styles = document.createElement("style");
+styles.innerText = ".window:not(.windowMaximized){border-radius:8px;}.window:not(.windowMaximized) .windowCloseIcon{border-top-right-radius:8px;}.window:not(.windowMaximized) .windowContext{border-bottom-right-radius:8px;border-bottom-left-radius:8px;}";
+document.head.appendChild(styles);

@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html class="--browz-element">
+  <body class="--browz-element" style="display:none">
+    <div class="--browz-element --browz-toolbar">
+      <input type="text" class="--browz-element" id="--browz-url-input">
+      <img resfile="src,search.png" class="--browz-element" id="--browz-search">
+      <img resfile="src,settings.png" class="--browz-element --browz-settings-icon" id="--browz-settings">
+    </div>
+    <iframe class="--browz-element --browz-content" id="--browz-content"></iframe>
+    <div class="--browz-element --browz-dialog --browz-hidden" id="--browz-settings-dialog">
+      <p class="--browz-element --browz-bold">Change proxy URL</p>
+      <p class="--browz-element">Change the default proxy URL. The proxy must be implemented to support Browz and the path must end with '/'.</p>
+      <input type="text" class="--browz-element --browz-settings-input --browz-hidden" id="--browz-settings-proxy">
+      <br>
+      <p class="--browz-element --browz-bold">Redirect big files</p>
+      <p class="--browz-element">Some files that are loaded through the proxy are too big to be sent modified. Enabling this option will fetch the big resources from the original source rather than through the proxy. Note that CORS issues may arrise. Applying this setting will immediately reload the page.</p>
+      <button class="--browz-element --browz-settings-btn" id="--browz-settings-bigjs">Enable</button>
+      <button class="--browz-element --browz-settings-apply --browz-settings-btn" id="--browz-settings-apply">Apply</button>
+    </div>
+    <div class="--browz-element --browz-dialog --browz-hidden" id="--browz-alert-dialog">
+      <p class="--browz-element --browz-bold">Attention!</p>
+      <p class="--browz-element">A big JavaScript file has failed to load because it is too big. The site may not function without it. It is recommended to turn on the 'Redirect big files' setting.<br><br>File: <span id="--browz-alert-file">?</span></p>
+      <button class="--browz-element --browz-settings-apply --browz-settings-btn" id="--browz-dialog-ok">OK</button>
+    </div>
+  </body>
+</html>

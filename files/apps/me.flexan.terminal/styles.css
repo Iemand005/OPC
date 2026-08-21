@@ -1,0 +1,19 @@
+body {
+  background-color: black;
+  color: white;
+}
+
+*::-webkit-scrollbar {
+  display: none;
+}
+
+.blinker {
+  display: inline;
+  animation: blink 1s steps(2, start) infinite;
+  background-color: white;
+  user-select: none;
+}
+
+@keyframes blink {
+  to {visibility: hidden;}
+}
