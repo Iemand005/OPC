@@ -461,7 +461,7 @@
         for (var i = 0; i < catalog.length; i++) {
           var item = catalog[i];
 
-          write((i + 1) + ". " + item[2] + " (" + item[0] + ")");
+          write((i + 1) + ". " + item[2] + " (" + item[0] + ")" + (i != catalog.length - 1 ? "\n" : ""));
         }
         return;
       }
@@ -470,11 +470,11 @@
           var item = catalog[i];
 
           if (item.includes(args[1])) {
-            var package = item[0];
+            var pkg = item[0];
 
-            if (!(await system.operation.obtainAppAccess(package))) return;
+            if (!(await system.operation.obtainAppAccess(pkg))) return;
 
-            var installed = await system.fs.exists("/apps/" + package);
+            var installed = await system.fs.exists("/apps/" + pkg);
             if (args[0] == "install" && installed) {
               write("App already installed, run: store update " + (args[1].includes(" ") ? "\"" + args[1] + "\"" : args[1]));
               return;
@@ -487,21 +487,21 @@
             }
 
             if (args[0] == "remove") {
-              await system.fs.deletePath("/apps/" + package);
+              await system.fs.deletePath("/apps/" + pkg);
               write("Uninstalled " + item[2]);
               return;
             }
 
             if (args[0] == "run") {
               args.shift();
-              await system.process.start(package, args);
+              await system.process.start(pkg, args);
               return;
             }
 
             await system.fs.deletePath("/appdata/.terminal/temp_install");
             await system.fs.createPath("/appdata/.terminal/temp_install");
 
-            var path = "/store/" + package + "/";
+            var path = "/store/" + pkg + "/";
             await system.operation.downloadFile("/appdata/.terminal/temp_install/_files.json", path + "_files.json");
 
             var files = JSON.parse(await system.fs.readString("/appdata/.terminal/temp_install/_files.json"));
@@ -510,11 +510,11 @@
             }
             
             if (installed) {
-              await system.fs.deletePath("/apps/" + package);
+              await system.fs.deletePath("/apps/" + pkg);
             }
 
-            await system.fs.createPath("/apps/" + package);
-            await system.fs.copy("/appdata/.terminal/temp_install", "/apps/" + package);
+            await system.fs.createPath("/apps/" + pkg);
+            await system.fs.copy("/appdata/.terminal/temp_install", "/apps/" + pkg);
             write((installed ? "Updated " : "Installed ") + item[2]);
             return;
           }
@@ -525,6 +525,15 @@
       }
 
       write("Usage: store (repo <url> | list | (install | update | remove | run) <name | package>)");
+      return;
+    }
+    if (cmd == "basj") {
+      if (args.length == 0) {
+        write("Usage: basj <javascript>");
+        return;
+      }
+      
+      write(eval(args.join(" ")));
       return;
     }
     

@@ -1,57 +1,57 @@
 const settings = {};
 const os = (function() {
-  var processes = [];
-  var hooks = {};
-  var hook = (type, id, callback) => {
-    var tt = hooks[type];
+  const processes = [];
+  const hooks = {};
+  const hook = (type, id, callback) => {
+    let tt = hooks[type];
     if (!tt) hooks[type] = tt = [];
-    var cc = tt[id];
+    let cc = tt[id];
     if (!cc) cc = tt[id] = [];
     cc.push(callback);
     return cc.length - 1;
   };
-  var unhook = (type, id, index) => {
-    var cc = hooks[type][id];
+  const unhook = (type, id, index) => {
+    const cc = hooks[type][id];
     cc.splice(index, 1, null);
   };
-  var hashook = (type, id) => hooks[type]?.[id] != undefined;
-  var callhook = (type, id, ...args) => {
-    var hh = hooks[type];
+  const hashook = (type, id) => hooks[type]?.[id] != undefined;
+  const callhook = (type, id, ...args) => {
+    const hh = hooks[type];
     if (!hh) return;
-    var cc = hh[id];
+    const cc = hh[id];
     if (!cc) return;
-    for (var i = 0; i < cc.length; i++) cc[i]?.(...args);
+    for (let i = 0; i < cc.length; i++) cc[i]?.(...args);
   };
   /* https://stackoverflow.com/a/50457849/15390856 */
-  var getFrameByEvent = (event) => {
+  const getFrameByEvent = (event) => {
     return Array.from(document.getElementsByTagName("iframe")).filter(iframe => {
       return iframe.contentWindow === event.source;
     })[0];
   };
   
-  var focusedWindow;
-  var globalZIndex = -1;
-  var allowLvos = false;
-  var optionsListener;
+  let focusedWindow;
+  let globalZIndex = -1;
+  let allowLvos = false;
+  let optionsListener;
 
   return {
     initProcessListener() {
       window.addEventListener("message", async (e) => {
-        var id = e.data.id;
-        var type = e.data.type;
-        var action = e.data.action;
-        var args = e.data.args;
+        const id = e.data.id;
+        const type = e.data.type;
+        const action = e.data.action;
+        const args = e.data.args;
         
-        var send = (...args) => e.source.postMessage({type: "apiResponse", args: [id, ...args]}, "*");
-        var sendType = (type, ...args) => e.source.postMessage({type, args: [...args]}, "*");
-        var frame = getFrameByEvent(e);
+        const send = (...args) => e.source.postMessage({type: "apiResponse", args: [id, ...args]}, "*");
+        const sendType = (type, ...args) => e.source.postMessage({type, args: [...args]}, "*");
+        const frame = getFrameByEvent(e);
         if (!frame) {
           return;
         }
 
-        var ctxpkg = frame.id;
+        const ctxpkg = frame.id;
 
-        var handleError = (err, ...extra) => {
+        const handleError = (err, ...extra) => {
           e.source.postMessage({type: "apiFailure", args: [id, err]}, "*");
           os.log("app-connector", "Error: " + err + "\nExtra: " + extra.map((v) => JSON.stringify(v)).join(", "), 3);
         };
@@ -64,28 +64,30 @@ const os = (function() {
         if (type == "operation") {
           if (action == "0") {//API:operation.downloadFile
             if (args.length <= 1) return handleError("Expected 2 arguments.");
-            var url = args[0] ?? "";
-            var path = args[1] ?? "";
+            const url = args[0] ?? "";
+            const path = args[1] ?? "";
             if (this.fs.checkPermission(path, ctxpkg)[1] <= 0) return handleError("Permission denied for access path.");
   
             try {
-              var done = await this.operation.download(url, this.fs.raw.getPath(path));
+              const done = await this.operation.download(url, this.fs.raw.getPath(path));
+
+              if (!done[0]) return handleError("Path is invalid.", done[1]);
+              return send(true);
             } catch (e) {
               return handleError("Invalid URL.", e);
             }
-            if (!done[0]) return handleError("Path is invalid.", done[1]);
-            return send(true);
           }
           if (action == "1") {//API:operation.obtainAppAccess
             if (args.length == 0) return handleError("Expected 1 argument.");
-            var forpkg = args[0] ?? "";
+            const forpkg = args[0] ?? "";
 
             if (this.fs.checkPermission("/apps/" + forpkg, ctxpkg, "EDIT")[1] > 0) return send(true);
 
-            var done = await this.startProcess("me.flexan.access", ["app", forpkg, ctxpkg], {id: "system,"});
+            const done = await this.startProcess("me.flexan.access", ["app", forpkg, ctxpkg], {id: "system,"});
             if (!done[0]) return handleError("Failed to request access.", done[1]);
 
-            var hid = hook("onTerminate", done[1], () => {
+            let hid;
+            hid = hook("onTerminate", done[1], () => {
               unhook("onTerminate", done[1], hid);
               if (e.source) send(this.fs.checkPermission("/apps/" + forpkg, ctxpkg, "EDIT")[1] > 0);
             });
@@ -93,9 +95,9 @@ const os = (function() {
           }
           if (action == "2") {//API:operation.getAppName
             if (args.length == 0) return handleError("Expected 1 argument.");
-            var pkg = args[0] ?? "";
+            const pkg = args[0] ?? "";
             
-            var appdata = await this.getAppdata(pkg, true);
+            let appdata = await this.getAppdata(pkg, true);
             if (!appdata[0]) return handleError("Failed to get appdata for package.", appdata[1]);
             appdata = appdata[1];
             return send(appdata.name);
@@ -122,16 +124,16 @@ const os = (function() {
                 }
                 if (args[0] == 0x01) {
                   if (!this.fs.exists("/system/host")[1]) return handleError("No host found.");
-                  var read = this.fs.readFile("/system/host");
+                  const read = this.fs.readFile("/system/host");
                   if (!read[0]) return handleError("Failed to read host.", read);
 
                   /* old method
-                  var files = await this.operation.downloadJSON(read[1] + "/_structure.json");
+                  let files = await this.operation.downloadJSON(read[1] + "/_structure.json");
                   if (!files[0]) return handleError("Failed to download from host.", files);
                   files = files[1];
                   if (typeof files != "object" || files.constructor !== Array) return handleError("Host is deceiving.");
 
-                  for (var i = 0; i < files.length; i++) {
+                  for (let i = 0; i < files.length; i++) {
                     await this.operation.download(read[1] + "/" + files[i], "/" + files[i]);
                   }
                    */
@@ -139,47 +141,47 @@ const os = (function() {
                   this.fs.createDirs(this.fs.raw.getPath("/system/states"));
                   this.fs.createFile("/system/states/updating", "");
                   
-                  var versions = await this.operation.downloadJSON(read[1] + "/__update.json");
-                  if (!versions[0]) return handleError("Failed to download from host.", files);
+                  let versions = await this.operation.downloadJSON(read[1] + "/__update.json");
+                  if (!versions[0]) return handleError("Failed to download from host.");
                   versions = versions[1];
                   if (typeof versions != "object" || versions.constructor === Array) return handleError("Host is deceiving.");
 
-                  var version = null;
-                  var sysver = null;
+                  let version = null;
+                  let sysver = null;
                   if (this.fs.exists("/system/sysver")[1]) {
                     sysver = this.fs.readFile("/system/sysver")[1];
                     version = versions[sysver];
                   }
                   
-                  var downloadVersion = async (ver) => {
+                  const downloadVersion = async (ver) => {
                     if (!ver) return;
-                    var wasprev = version == ver && sysver != null && !versions[ver.nextVersion];
+                    const wasprev = version == ver && sysver != null && !versions[ver.nextVersion];
                     if (version == ver && !wasprev) return await downloadVersion(versions[ver.nextVersion]);
                     version = ver;
                     if (version.skip) return await downloadVersion(versions[version.version]);
                     try {
                       sendType("updateProgress", "versionStart", version.version);
                       sendType("updateProgress", "isUpdating", wasprev);
-                      var files = wasprev ? [] : (version.install?.files ?? []);
-                      var dirs = wasprev ? [] : (version.install?.directories ?? []);
-                      var files2 = version.update?.files ?? [];
-                      var dirs2 = version.update?.directories ?? [];
+                      let files = wasprev ? [] : (version.install?.files ?? []);
+                      let dirs = wasprev ? [] : (version.install?.directories ?? []);
+                      const files2 = version.update?.files ?? [];
+                      const dirs2 = version.update?.directories ?? [];
                       files = [...files, ...files2];
                       dirs = [...dirs, ...dirs2];
 
-                      for (var i = 0; i < files.length; i++) {
+                      for (let i = 0; i < files.length; i++) {
                         sendType("updateProgress", "download", read[1] + "/" + files[i]);
                         await this.operation.download(read[1] + "/" + files[i], "/" + files[i]);
                         sendType("updateProgress", "file", "/" + files[i]);
                       }
-                      for (var i = 0; i < dirs.length; i++) {
+                      for (let i = 0; i < dirs.length; i++) {
                         this.fs.createDirs(this.fs.raw.getPath("/" + dirs[i]));
                         sendType("updateProgress", "directory", "/" + dirs[i]);
                       }
 
                       sendType("updateProgress", "config");
                       if (!wasprev && version.install?.taskbar) {
-                        for (var i = 0; i < version.install.taskbar.length; i++) {
+                        for (let i = 0; i < version.install.taskbar.length; i++) {
                           this.taskbar.add(version.install.taskbar[i]);
                         }
                       }
@@ -212,18 +214,18 @@ const os = (function() {
                   return send(true);
                 }
                 if (args[0] == 0x04) {
-                  var mnt = this.fs.mount.mount(args[1], args[2]);
+                  const mnt = this.fs.mount.mount(args[1], args[2]);
                   if (!mnt[0]) return handleError("Failed to mount.", mnt[1]);
                   return send(true);
                 }
                 if (args[0] == 0x05) {
-                  var mnt = this.fs.mount.eject(args[1]);
+                  const mnt = this.fs.mount.eject(args[1]);
                   if (!mnt[0]) return handleError("Failed to eject.", mnt[1]);
                   return send(mnt[1]);
                 }
               }
               return handleError("Invalid operation.");
-            } catch (e) {
+            } catch {
               return handleError("Source is untrustworthy.");
             }
           }
@@ -231,28 +233,28 @@ const os = (function() {
             return send({ram: {unit: " MB", value: this.memory.ramUsageMB.toFixed(2)}, gpu: {unit: "% (not measured)", value: 0}, cpu: {unit: "% (not measured)", value: 0}, cores: {unit: "", value: navigator.hardwareConcurrency}});
           }
           if (action == "5") {//API:operation.shutdown
-            var rb = true;
-            await new Promise(async (s, j) => {
-              os.notifications.show("Shutdown", "OPC will shutdown in 5 seconds. Press to cancel.", (n) => {
-                n.dismiss();
-                rb = false;
-                s();
-              });
-              await new Promise(() => setTimeout(s, 5000));
+            let rb = true;
+
+            os.notifications.show("Shutdown", "OPC will shutdown in 5 seconds. Press to cancel.", (n) => {
+              n.dismiss();
+              rb = false;
+              s();
             });
+            await new Promise((s) => setTimeout(s, 5000));
+            
             if (rb) this.shutdown();
             return send(rb);
           }
           if (action == "6") {//API:operation.reboot
-            var rb = true;
-            await new Promise(async (s, j) => {
-              os.notifications.show("Reboot", "OPC will reboot in 5 seconds. Press to cancel.", (n) => {
-                n.dismiss();
-                rb = false;
-                s();
-              });
-              await new Promise(() => setTimeout(s, 5000));
+            let rb = true;
+            
+            os.notifications.show("Reboot", "OPC will reboot in 5 seconds. Press to cancel.", (n) => {
+              n.dismiss();
+              rb = false;
+              s();
             });
+            await new Promise((s) => setTimeout(s, 5000));
+
             if (rb) this.reboot();
             return send(rb);
           }
@@ -281,12 +283,12 @@ const os = (function() {
         if (type == "window") {
           if (action == "b") {//API:window.sendNotification
             if (args.length < 2) return handleError("Expected 2 or more arguments.");
-            var id = Math.floor(Math.random() * 1000000);
+            const notifId = Math.floor(Math.random() * 1000000);
             this.notifications.show(args[0], args[1], (notification) => {
               notification.onClick = null;
-              callhook("notificationCallback", id, notification);
+              callhook("notificationCallback", notifId, notification);
             }, args[2]);
-            return send(id);
+            return send(notifId);
           }
           if (action == "c") {//API:<Notification>.waitForClick
             if (args.length == 0) return handleError("Expected 1 or more arguments.");
@@ -294,7 +296,7 @@ const os = (function() {
             return;
           }
 
-          var win = frame.parentElement;
+          const win = frame.parentElement;
           if (win == document.body || win.classList.contains("hidden")) return action == "d" ? send(0) : handleError("No window to manage.");
 
           if (action == "0") {//API:window.isMinimized
@@ -319,9 +321,9 @@ const os = (function() {
             return send(true);
           }
           if (action == "5") {//API:window.hide
-            var count = document.querySelector("#taskbarItem-" + CSS.escape(frame.id) + " .taskbarItemCount");
+            const count = document.querySelector("#taskbarItem-" + CSS.escape(frame.id) + " .taskbarItemCount");
             if (count && !win.classList.contains("windowHidden")) {
-              var cc = +count.innerText - 1;
+              const cc = +count.innerText - 1;
               count.innerText = cc;
               if (cc == 0) count.style.display = "none";
             }
@@ -329,7 +331,7 @@ const os = (function() {
             return send(true);
           }
           if (action == "6") {//API:window.show
-            var count = document.querySelector("#taskbarItem-" + CSS.escape(frame.id) + " .taskbarItemCount");
+            const count = document.querySelector("#taskbarItem-" + CSS.escape(frame.id) + " .taskbarItemCount");
             if (count && win.classList.contains("windowHidden")) {
               count.style.display = "";
               count.innerText = +count.innerText + 1;
@@ -338,7 +340,7 @@ const os = (function() {
             return send(true);
           }
           if (action == "7") {//API:window.close
-            var process = this.getProcessByContext(frame)[1];
+            const process = this.getProcessByContext(frame)[1];
             os.closeWindowV2(frame, process, true);
             //if (process.windows.length == 0) return;
             return send(true);
@@ -370,7 +372,7 @@ const os = (function() {
         if (type == "process") {
           if (action == "0") {//API:<Process>.kill
             if (args.length > 0 && args[0]) {
-              var process = this.getProcess(args[0])[1];
+              const process = this.getProcess(args[0])[1];
               if (!process) return handleError("Process not found.");
               this.killProcess(process);
               return;
@@ -380,15 +382,15 @@ const os = (function() {
           }
           if (action == "1") {//API:process.start
             if (args.length == 0) return handleError("Expected 1 or more arguments.");
-            var package = args[0] ?? "";
-            var done = await this.startProcess(package, args[1], frame);
+            const pkg = args[0] ?? "";
+            const done = await this.startProcess(pkg, args[1], frame);
             if (!done[0]) return handleError("Failed to start process.", done[1]);
-            return send(done[1], this.getProcess(done[1]).package);
+            return send(done[1], this.getProcess(done[1])["package"]);
           }
           if (action == "2") {//API:<Process>.getArguments
-            var cc = this.getProcessByContext(frame)[1];
+            const cc = this.getProcessByContext(frame)[1];
             if (args.length > 0 && args[0]) {
-              var process = this.getProcess(args[0])[1];
+              const process = this.getProcess(args[0])[1];
               if (!process) return handleError("Process not found.");
               if (process != cc && process.initiator != frame) return handleError("Permission denied: Process is not (started by) the calling process.");
               return send(process.args);
@@ -396,14 +398,16 @@ const os = (function() {
             return send(cc.args);
           }
           if (action == "3") {//API:process.getAll
-            return send(processes.map((p) => [p.id, p.package]));
+            return send(processes.map((p) => [p.id, p["package"]]));
           }
           if (action == "4") {//API:process.startAndWait
             if (args.length == 0) return handleError("Expected 1 or more arguments.");
-            var package = args[0] ?? "";
-            var done = await this.startProcess(package, args[1], frame);
+            const pkg = args[0] ?? "";
+            const done = await this.startProcess(pkg, args[1], frame);
             if (!done[0]) return handleError("Failed to start process.", done[1]);
-            var hid = hook("onTerminate", done[1], () => {
+
+            let hid;
+            hid = hook("onTerminate", done[1], () => {
               unhook("onTerminate", done[1], hid);
               if (e.source) send(true);
             });
@@ -411,7 +415,7 @@ const os = (function() {
           }
           if (action == "5") {//API:<Process>.getId
             if (args.length > 0 && args[0]) {
-              var process = this.getProcess(args[0])[1];
+              const process = this.getProcess(args[0])[1];
               if (!process) return handleError("Process not found.");
               return send(process.id);
             }
@@ -419,60 +423,60 @@ const os = (function() {
           }
           if (action == "6") {//API:<Process>.getPackage
             if (args.length > 0 && args[0]) {
-              var process = this.getProcess(args[0])[1];
+              const process = this.getProcess(args[0])[1];
               if (!process) return handleError("Process not found.");
-              return send(process.package);
+              return send(process["package"]);
             }
-            return send(this.getProcessByContext(frame)[1].package);
+            return send(this.getProcessByContext(frame)[1]["package"]);
           }
           if (action == "7") {//API:process.getAllStarted
-            return send(processes.filter((p) => p.initiator == frame).map((p) => [p.id, p.package]));
+            return send(processes.filter((p) => p.initiator == frame).map((p) => [p.id, p["package"]]));
           }
           if (action == "8") {//API:<Process>.getCallerPackage
             return send(this.getProcessByContext(frame)[1].initiator?.id);
           }
           if (action == "9") {//API:process.startService
             if (args.length == 0) return handleError("Expected 1 or more arguments.");
-            return send(os.services.run(this.getProcessByContext(frame)[1].package, args[0]));
+            return send(os.services.run(this.getProcessByContext(frame)[1]["package"], args[0]));
           }
           return handleError("Unknown/unimplemented API requested.");
         }
 
         if (type == "fs") {
-          var is1 = action == "1";
+          const is1 = action == "1";
           if (action == "0" || is1) {//API:fs.process.readString, API:fs.process.readBase64 (is1)
             if (args.length == 0) return handleError("Expected 1 argument.");
-            var path = args[0] ?? "";
-            var dir = this.fs.isDir(path);
+            const path = args[0] ?? "";
+            const dir = this.fs.isDir(path);
             if (!dir[0]) return handleError("Path is invalid.", dir[1]);
             if (dir[1]) return handleError("Path is a directory.");
             if (this.fs.checkPermission(path, ctxpkg)[1] <= 0) return handleError("Permission denied for access path.");
 
-            var res = this.getResourceFromPackage(this.getProcessByContext(frame)[1].package, path);
+            const res = this.getResourceFromPackage(this.getProcessByContext(frame)[1]["package"], path);
             if (!res[0]) return handleError("Invalid resource.", res[1]);
 
-            var contents = this.fs.readFile(res[1], is1);
+            const contents = this.fs.readFile(res[1], is1);
             if (!contents[0]) return handleError("Resource contains invalid contents.", contents[1]);
             return send(contents[1]);
           }
           if (action == "2") {//API:fs.listAll
             if (args.length == 0) return handleError("Expected 1 argument.");
-            var path = args[0] ?? "";
-            var dir = this.fs.isDir(path);
+            const path = args[0] ?? "";
+            const dir = this.fs.isDir(path);
             if (!dir[0]) return handleError("Path is invalid.", dir[1]);
             if (!dir[1]) return handleError("Path is a file.");
             if (this.fs.checkPermission(path, ctxpkg)[1] <= 0) return handleError("Permission denied for access path.");
   
-            var files = this.fs.getFiles(path);
+            const files = this.fs.getFiles(path);
             if (!files[0]) return handleError("Something went wrong while fetching files and directories.", files[1]);
             return send(files[1]);
           }
           if (action == "3") {//API:fs.getPath
             if (args.length == 0) return handleError("Expected 1 argument.");
-            var path = args[0] ?? "";
+            const path = args[0] ?? "";
 
             try {
-              var npath = this.fs.raw.getPath(path);
+              const npath = this.fs.raw.getPath(path);
               return send(npath);
             } catch (e) {
               return handleError("Path is invalid.", e.toString());
@@ -480,107 +484,107 @@ const os = (function() {
           }
           if (action == "4") {//API:fs.exists
             if (args.length == 0) return handleError("Expected 1 argument.");
-            var path = args[0] ?? "";
+            const path = args[0] ?? "";
             if (this.fs.checkPermission(path, ctxpkg)[1] <= 0 && this.fs.checkPermission(path, ctxpkg, "EDIT")[1] <= 0) return handleError("Permission denied for access path.");
 
-            var exists = this.fs.exists(path);
+            const exists = this.fs.exists(path);
             if (!exists[0]) return handleError("Path is invalid.", dir[1]);
             return send(exists[1]);
           }
           if (action == "5") {//API:fs.isDir + API:fs.isFile
             if (args.length == 0) return handleError("Expected 1 argument.");
-            var path = args[0] ?? "";
+            const path = args[0] ?? "";
             if (this.fs.checkPermission(path, ctxpkg)[1] <= 0) return handleError("Permission denied for access path.");
 
-            var isDir = this.fs.isDir(path);
+            const isDir = this.fs.isDir(path);
             if (!isDir[0]) return handleError("Path is invalid.", dir[1]);
             return send(isDir[1]);
           }
           if (action == "6") {//API:fs.readString
             if (args.length == 0) return handleError("Expected 1 argument.");
-            var path = args[0] ?? "";
-            var dir = this.fs.isDir(path);
+            const path = args[0] ?? "";
+            const dir = this.fs.isDir(path);
             if (!dir[0]) return handleError("Path is invalid.", dir[1]);
             if (dir[1]) return handleError("Path is a directory.");
             if (this.fs.checkPermission(path, ctxpkg)[1] <= 0) return handleError("Permission denied for access path.");
             if (!this.fs.exists(path)[1]) return handleError("File doesn't exist.");
   
-            var contents = this.fs.readFile(path);
+            const contents = this.fs.readFile(path);
             if (!contents[0]) return handleError("File contains invalid contents.", contents[1]);
             return send(contents[1]);
           }
           if (action == "7") {//API:fs.readBase64
             if (args.length == 0) return handleError("Expected 1 argument.");
-            var path = args[0] ?? "";
-            var dir = this.fs.isDir(path);
+            const path = args[0] ?? "";
+            const dir = this.fs.isDir(path);
             if (!dir[0]) return handleError("Path is invalid.", dir[1]);
             if (dir[1]) return handleError("Path is a directory.");
             if (this.fs.checkPermission(path, ctxpkg)[1] <= 0) return handleError("Permission denied for access path.");
             if (!this.fs.exists(path)[1]) return handleError("File doesn't exist.");
   
-            var contents = this.fs.readFile(path, true);
+            const contents = this.fs.readFile(path, true);
             if (!contents[0]) return handleError("File contains invalid contents.", contents[1]);
             return send(contents[1]);
           }
           if (action == "8") {//API:fs.createPath
             if (args.length == 0) return handleError("Expected 1 argument.");
-            var path = args[0] ?? "";
+            const path = args[0] ?? "";
             if (this.fs.checkPermission(path, ctxpkg, "EDIT")[1] <= 0) return handleError("Permission denied for access path.");
   
-            var done = this.fs.createDirs(this.fs.raw.getPath(path));
+            const done = this.fs.createDirs(this.fs.raw.getPath(path));
             if (!done[0]) return handleError("Path is invalid.", done[1]);
             return send(true);
           }
           if (action == "9") {//API:fs.deletePath
             if (args.length == 0) return handleError("Expected 1 argument.");
-            var path = args[0] ?? "";
+            const path = args[0] ?? "";
             if (this.fs.checkPermission(path, ctxpkg, "EDIT")[1] <= 0) return handleError("Permission denied for access path.");
   
-            var done = this.fs.delete(this.fs.raw.getPath(path));
+            const done = this.fs.delete(this.fs.raw.getPath(path));
             if (!done[0]) return handleError("Path is invalid.", done[1]);
             return send(true);
           }
           if (action == "a") {//API:fs.listFiles
             if (args.length == 0) return handleError("Expected 1 argument.");
-            var path = args[0] ?? "";
-            var dir = this.fs.isDir(path);
+            const path = args[0] ?? "";
+            const dir = this.fs.isDir(path);
             if (!dir[0]) return handleError("Path is invalid.", dir[1]);
             if (!dir[1]) return handleError("Path is a file.");
             if (this.fs.checkPermission(path, ctxpkg)[1] <= 0) return handleError("Permission denied for access path.");
   
-            var files = this.fs.getFiles(path);
+            const files = this.fs.getFiles(path);
             if (!files[0]) return handleError("Something went wrong while fetching files.", files[1]);
             return send(files[1].filter((p) => !this.fs.isDir(this.fs.raw.getPath(path) + "/" + p)[1]));
           }
           if (action == "b") {//API:fs.listDirectories
             if (args.length == 0) return handleError("Expected 1 argument.");
-            var path = args[0] ?? "";
-            var dir = this.fs.isDir(path);
+            const path = args[0] ?? "";
+            const dir = this.fs.isDir(path);
             if (!dir[0]) return handleError("Path is invalid.", dir[1]);
             if (!dir[1]) return handleError("Path is a file.");
             if (this.fs.checkPermission(path, ctxpkg)[1] <= 0) return handleError("Permission denied for access path.");
   
-            var files = this.fs.getFiles(path);
+            const files = this.fs.getFiles(path);
             if (!files[0]) return handleError("Something went wrong while fetching directories.", files[1]);
             return send(files[1].filter((p) => this.fs.isDir(this.fs.raw.getPath(path) + "/" + p)[1]));
           }
           if (action == "c") {//API:fs.writeString
             if (args.length <= 1) return handleError("Expected 2 arguments.");
-            var path = args[0] ?? "";
-            var data = args[1] ?? "";
+            const path = args[0] ?? "";
+            const data = args[1] ?? "";
             if (this.fs.checkPermission(path, ctxpkg, "EDIT")[1] <= 0) return handleError("Permission denied for access path.");
   
-            var done = this.fs.writeFile(path, data);
+            const done = this.fs.writeFile(path, data);
             if (!done[0]) return handleError("Something went wrong while writing the file.", files[1]);
             return send(done[1]);
           }
           if (action == "d") {//API:fs.writeBase64
             if (args.length <= 1) return handleError("Expected 2 arguments.");
-            var path = args[0] ?? "";
-            var data = args[1] ?? "";
+            const path = args[0] ?? "";
+            const data = args[1] ?? "";
             if (this.fs.checkPermission(path, ctxpkg, "EDIT")[1] <= 0) return handleError("Permission denied for access path.");
   
-            var done = this.fs.writeFile(path, data, true);
+            const done = this.fs.writeFile(path, data, true);
             if (!done[0]) return handleError("Something went wrong while writing the file.", files[1]);
             return send(done[1]);
           }
@@ -590,9 +594,9 @@ const os = (function() {
       }, false);
     },
     createWindow(data) {
-      var context;
-      var id = Math.floor(Math.random() * 100000);
-      var win = document.createElement("div");
+      let context;
+      const id = Math.floor(Math.random() * 100000);
+      const win = document.createElement("div");
       win.className = "window";
       win.id = id;
       win.style.zIndex = ++globalZIndex;
@@ -608,28 +612,17 @@ const os = (function() {
         os.focusWindow(win);
       });
 
-      var toolbar = document.createElement("div");
+      const toolbar = document.createElement("div");
       toolbar.className = "windowTop";
 
-      var should = true;
-      var drag;
-      toolbar.addEventListener("mousedown", (e) => {
-        if (!should) {
-          should = true;
-          return;
-        }
-        drag = [e.offsetX, e.offsetY, win];
-        
-        var frames = document.getElementsByTagName("iframe");
-        for (var i = 0; i < frames.length; i++) frames[i].style.pointerEvents = frames[i].style.userSelect = "none";
-        
-        document.addEventListener("mousemove", listener);
-      });
-      var listener = (e) => {
-        var win2 = drag[2];
+      let should = true;
+      let drag;
+      let listener;
+      listener = (e) => {
+        const win2 = drag[2];
         if (!document.body.contains(win)) {
-          var frames = document.getElementsByTagName("iframe");
-          for (var i = 0; i < frames.length; i++) frames[i].style.pointerEvents = frames[i].style.userSelect = "";
+          const frames = document.getElementsByTagName("iframe");
+          for (let i = 0; i < frames.length; i++) frames[i].style.pointerEvents = frames[i].style.userSelect = "";
           
           document.removeEventListener("mousemove", listener);
           return;
@@ -641,69 +634,81 @@ const os = (function() {
         win2.style.left = e.pageX - drag[0] + "px";
         win2.style.top = e.pageY - drag[1] + "px";
       };
-      toolbar.addEventListener("mouseup", (e) => {
+      toolbar.addEventListener("mousedown", (e) => {
+        if (!should) {
+          should = true;
+          return;
+        }
+        drag = [e.offsetX, e.offsetY, win];
+        
+        const frames = document.getElementsByTagName("iframe");
+        for (let i = 0; i < frames.length; i++) frames[i].style.pointerEvents = frames[i].style.userSelect = "none";
+        
+        document.addEventListener("mousemove", listener);
+      });
+      toolbar.addEventListener("mouseup", () => {
         drag = undefined;
 
-        var frames = document.getElementsByTagName("iframe");
-        for (var i = 0; i < frames.length; i++) frames[i].style.pointerEvents = frames[i].style.userSelect = "";
+        const frames = document.getElementsByTagName("iframe");
+        for (let i = 0; i < frames.length; i++) frames[i].style.pointerEvents = frames[i].style.userSelect = "";
 
         document.removeEventListener("mousemove", listener);
       });
-      toolbar.addEventListener("dblclick", (e) => {
+      toolbar.addEventListener("dblclick", () => {
         if (win.classList.contains("windowMaximized")) win.classList.remove("windowMaximized");
         else win.classList.add("windowMaximized");
       });
 
       if (data.icon) {
-        var toolbarIcon = document.createElement("img");
+        const toolbarIcon = document.createElement("img");
         toolbarIcon.className = "windowIcon";
         toolbarIcon.src = data.icon;
-        toolbarIcon.addEventListener("click", (e) => {});
+        toolbarIcon.addEventListener("click", () => {});
         toolbarIcon.addEventListener("dblclick", (e) => {e.stopPropagation()});
         toolbar.appendChild(toolbarIcon);
       }
       
-      var toolbarText = document.createElement("p");
+      const toolbarText = document.createElement("p");
       toolbarText.innerText = data.name;
       toolbar.appendChild(toolbarText);
 
-      var toolbarClose = document.createElement("span");
+      const toolbarClose = document.createElement("span");
       toolbarClose.className = "windowCloseIcon";
       toolbarClose.innerText = "X";
-      toolbarClose.addEventListener("mousedown", (e) => should = false);
-      toolbarClose.addEventListener("click", (e) => this.closeWindowV2(context, this.getProcessByContext(context)[1], false));
+      toolbarClose.addEventListener("mousedown", () => should = false);
+      toolbarClose.addEventListener("click", () => this.closeWindowV2(context, this.getProcessByContext(context)[1], false));
       toolbarClose.addEventListener("dblclick", (e) => {e.stopPropagation()});
       toolbar.appendChild(toolbarClose);
       win.appendChild(toolbar);
 
-      var newScript = (name) => "<script src=\"" + location.origin + location.pathname + "/" + name + "\"></script>";
+      const newScript = (name) => "<script src=\"" + location.origin + location.pathname + "/" + name + "\"></script>";
       context = document.createElement("iframe");
-      context.id = data.package;
+      context.id = data["package"];
       context.className = "windowContext";
       context.addEventListener("load", async () => {
         await new Promise(r => setTimeout(r, 50));
-        context.contentWindow.postMessage({type: "startScript", args: [data.executor, id, data.package]}, "*");
+        context.contentWindow.postMessage({type: "startScript", args: [data.executor, id, data["package"]]}, "*");
       });
       context.src = "data:text/html," + newScript("sdk.js") + (data.lvos ? newScript("lvos/messenger.js") + newScript("lvos/opc-sdk-patch.js") : "");
       win.appendChild(context);
 
       return [win, context];
     },
-    closeWindow(context, process) {
+    closeWindow(/*context, process*/) {
       return [false, "Don't use."];
-      if (!process) {
-        process = this.getProcessByContext(context);
-        if (!process[0]) return process;
-        process = process[1];
-      }
+      // if (!process) {
+      //   process = this.getProcessByContext(context);
+      //   if (!process[0]) return process;
+      //   process = process[1];
+      // }
       
-      var win = context.parentElement;
-      document.body.removeChild(win);
-      process.windows.splice(process.windows.indexOf(win), 1);
+      // const win = context.parentElement;
+      // win.remove();
+      // process.windows.splice(process.windows.indexOf(win), 1);
 
-      if (process.windows.length == 0) return this.killProcess(process);
+      // if (process.windows.length == 0) return this.killProcess(process);
 
-      return [true];
+      // return [true];
     },
     closeWindowV2(ctx, process, fromOwner) {
       if (!process) {
@@ -712,7 +717,7 @@ const os = (function() {
         process = process[1];
       }
 
-      var win = ctx.parentElement;
+      const win = ctx.parentElement;
       if (!fromOwner) {
         ctx.contentWindow.postMessage({type: "windowExit", args: [0, +win.id]}, "*");
         return;
@@ -723,9 +728,9 @@ const os = (function() {
       process.ghosts.push(win);
       process.windows.splice(process.windows.indexOf(win), 1);
 
-      var count = document.querySelector("#taskbarItem-" + CSS.escape(process.package) + " .taskbarItemCount");
+      const count = document.querySelector("#taskbarItem-" + CSS.escape(process["package"]) + " .taskbarItemCount");
       if (count) {
-        var cc = +count.innerText - 1;
+        const cc = +count.innerText - 1;
         count.innerText = cc;
         if (cc == 0) count.style.display = "none";
       }
@@ -736,83 +741,85 @@ const os = (function() {
         win.style.zIndex = ++globalZIndex;
       }
       
-      optionsListener?.();
+      this.taskbar.hideOptions();
     },
     getWindowById(process, id) {
-      for (var i = 0; i < process.windows.length; i++) {
+      for (let i = 0; i < process.windows.length; i++) {
         if (+process.windows[i].id == id) return [true, process.windows[i]];
       }
       return [true, null];
     },
-    getResourceFromPackage(package, relativeResourcePath, skipPackagePathCheck) {
-      var checkPath = function(pp, alt) {
-        if (pp.includes("/") || pp.includes("\\") || pp.trim() == "." || pp.trim() == "..") return [false, "Invalid path '" + pp + "' in package '" + package + "'."];
+    getResourceFromPackage(pkg, relativeResourcePath, skipPackagePathCheck) {
+      const checkPath = function(pp, alt) {
+        if (pp.includes("/") || pp.includes("\\") || pp.trim() == "." || pp.trim() == "..") return [false, "Invalid path '" + pp + "' in package '" + pkg + "'."];
   
-        var zz = os.fs.raw.getPath(alt);
-        if (!os.fs.exists(zz)[1]) return [false, "Resource '" + pp + "' in package '" + package + "' is unresolvable."];
+        const zz = os.fs.raw.getPath(alt);
+        if (!os.fs.exists(zz)[1]) return [false, "Resource '" + pp + "' in package '" + pkg + "' is unresolvable."];
   
         return [true, zz];
       };
   
-      var path = "/apps/" + package;
+      let path = "/apps/" + pkg;
       if (!skipPackagePathCheck) {
-        path = checkPath(package, path);
+        path = checkPath(pkg, path);
         if (!path[0]) return path;
         path = path[1];
       }
 
-      var resourcePath = checkPath(relativeResourcePath, path + "/" + relativeResourcePath);
+      const resourcePath = checkPath(relativeResourcePath, path + "/" + relativeResourcePath);
       if (!resourcePath[0]) return resourcePath;
 
       return [true, resourcePath[1]];
     },
-    async getAppdata(package, skipFileResolver) {
-      if (package?.includes(",")) return [false, "Invalid package '" + package + "' cannot contain a comma."];
+    async getAppdata(pkg, skipFileResolver) {
+      if (pkg?.includes(",")) return [false, "Invalid package '" + pkg + "' cannot contain a comma."];
   
-      var res = this.getResourceFromPackage(package, "_appdata.json");
+      const res = this.getResourceFromPackage(pkg, "_appdata.json");
       if (!res[0]) return res;
 
-      var appdata = this.fs.readFile(res[1]);
+      let appdata = this.fs.readFile(res[1]);
       if (!appdata[0]) return appdata;
       try {
         appdata = JSON.parse(appdata[1]);
       } catch {
-        return [false, "No valid appdata for package '" + package + "'."];
+        return [false, "No valid appdata for package '" + pkg + "'."];
       }
-      if (appdata.constructor != Object) return [false, "Invalid configuration for package '" + package + "'."];
+      if (appdata.constructor != Object) return [false, "Invalid configuration for package '" + pkg + "'."];
   
       if (!skipFileResolver) {
         if (appdata.icon) {
-          var iconPath = this.getResourceFromPackage(package, appdata.icon, true);
+          let iconPath = this.getResourceFromPackage(pkg, appdata.icon, true);
           if (!iconPath[0]) return iconPath;
           iconPath = iconPath[1];
     
-          var iconBlob = await this.fs.readBlob(iconPath);
+          const iconBlob = await this.fs.readBlob(iconPath);
           if (!iconBlob[0]) return iconBlob;
           appdata.icon = iconBlob[1];
         }
     
-        var executorPath = this.getResourceFromPackage(package, appdata.executor, true);
+        let executorPath = this.getResourceFromPackage(pkg, appdata.executor, true);
         if (!executorPath[0]) return executorPath;
         executorPath = executorPath[1];
   
-        var executorB64 = this.fs.readFile(executorPath, true);
+        const executorB64 = this.fs.readFile(executorPath, true);
         if (!executorB64[0]) return executorB64;
         appdata.executor = executorB64[1];
       }
 
-      appdata.package = package;
+      appdata["package"] = pkg;
   
       return [true, appdata];
     },
-    async startProcess(package, args, initiator) {
+    async startProcess(pkg, args, initiator) {
+      let id = Math.floor(Math.random() * 100000);
+
       try {
-        var checkType = function(val, type) {
+        const checkType = function(val, type) {
           if (val == undefined || val == null) return false;
           return typeof val != type;
         };
   
-        var appdata = await this.getAppdata(package);
+        let appdata = await this.getAppdata(pkg);
         if (!appdata[0]) return appdata;
         appdata = appdata[1];
   
@@ -820,19 +827,18 @@ const os = (function() {
             checkType(appdata.startOptions.windowX, "number") ||
             checkType(appdata.startOptions.windowY, "number") ||
             checkType(appdata.startOptions.windowWidth, "number") ||
-            checkType(appdata.startOptions.windowHeight, "number"))) return [false, "Invalid start configuration for package '" + package + "'."];
+            checkType(appdata.startOptions.windowHeight, "number"))) return [false, "Invalid start configuration for package '" + pkg + "'."];
         
-        var id = Math.floor(Math.random() * 100000);
-        var process = {id, appdata, package, args: args ?? [], initiator};
+        const process = {id, appdata, "package": pkg, args: args ?? [], initiator};
         processes.push(process);
   
-        var ww = this.createWindow(appdata);
-        var w = ww[0];
+        const ww = this.createWindow(appdata);
+        const w = ww[0];
         process.windows = [];
         if (appdata.hasWindow) {
           process.windows.push(w);
   
-          var count = document.querySelector("#taskbarItem-" + CSS.escape(package) + " .taskbarItemCount");
+          const count = document.querySelector("#taskbarItem-" + CSS.escape(pkg) + " .taskbarItemCount");
           if (count) {
             count.style.display = "";
             count.innerText = +count.innerText + 1;
@@ -843,7 +849,7 @@ const os = (function() {
         }
         process.contexts = [ww[1]];
         document.body.appendChild(w);
-      } catch (e) {
+      } catch {
         return [false, "Unexpected issue, uncertain state."];
       }
 
@@ -851,7 +857,7 @@ const os = (function() {
     },
     killProcess(process) {
       if (process.windows.length > 0) {
-        for (var i = 0; i < process.windows.length; i++) document.body.removeChild(process.windows[i]);
+        for (let i = 0; i < process.windows.length; i++) process.windows[i].remove();
       }
       processes.splice(processes.indexOf(process), 1);
 
@@ -859,69 +865,68 @@ const os = (function() {
       os.log("os.killProcess()", "Killed process " + process.id + " '" + process.appdata.name + "'", 3);
       return [true];  
     },
-    closeProcess(process, wait) {
-      var ctx = process.contexts?.[0];
+    async closeProcess(process, wait) {
+      const ctx = process.contexts?.[0];
       if (!ctx) return this.killProcess(process);
-      var id = process.id;
+      const id = process.id;
 
       if (hashook("programExitedAwait", id) && wait) return;
-      return new Promise(async (s, j) => {
-        var ind;
-        var dne = true;
-        ind = hook("programExitedAwait", id, () => s(dne = unhook("programExitedAwait", id, ind)));
-        ctx.contentWindow.postMessage({type: "programExit", args: []}, "*");
-        if (wait) {
-          await new Promise(r => setTimeout(r, 15000));
-          if (dne) s(unhook("programExitedAwait", id, ind));
-        }
-      });
+      
+      let ind;
+      let dne = true;
+      ind = hook("programExitedAwait", id, () => s(dne = unhook("programExitedAwait", id, ind)));
+      ctx.contentWindow.postMessage({type: "programExit", args: []}, "*");
+      if (wait) {
+        await new Promise(r => setTimeout(r, 15000));
+        if (dne) s(unhook("programExitedAwait", id, ind));
+      }
     },
     getProcesses() {
       return [true, [...processes]];
     },
     getProcess(id) {
-      for (var i = 0; i < processes.length; i++) {
+      for (let i = 0; i < processes.length; i++) {
         if (processes[i].id == id) return [true, processes[i]];
       }
       return [true, null];
     },
     getProcessByContext(context) {
-      for (var i = 0; i < processes.length; i++) {
-        var contexts = processes[i].contexts;
-        for (var z = 0; z < contexts.length; z++) {
+      for (let i = 0; i < processes.length; i++) {
+        const contexts = processes[i].contexts;
+        for (let z = 0; z < contexts.length; z++) {
           if (contexts[z] == context) return [true, processes[i]];
         }
       }
       return [true, null];
     },
-    getProcessByPackage(package) {
-      for (var i = 0; i < processes.length; i++) {
-        if (processes[i].package == package) return [true, processes[i]];
+    getProcessByPackage(pkg) {
+      for (let i = 0; i < processes.length; i++) {
+        if (processes[i]["package"] == pkg) return [true, processes[i]];
       }
       return [true, null];
     },
-    getProcessesByPackage(package) {
-      return [true, processes.filter((process) => process.package == package)];
+    getProcessesByPackage(pkg) {
+      return [true, processes.filter((process) => process["package"] == pkg)];
     },
     async shutdown(reboot) {
       document.querySelector(".notifications").classList.add("hidden");
       document.querySelector(".taskbar").classList.add("hidden");
 
       this.log("shutdown", "Closing processes...", 3);
-      var proms = [];
-      for (var i = 0; i < processes.length; i++) proms.push(this.closeProcess(processes[i]), true);
-      for (var i = 0; i < proms.length; i++) await proms[i];
+      const proms = [];
+      for (let i = 0; i < processes.length; i++) proms.push(this.closeProcess(processes[i]), true);
+      for (let i = 0; i < proms.length; i++) await proms[i];
       
       this.log("shutdown", "Ejecting mounts...", 3);
-      var mounts = this.fs.mount.getMounts();
-      for (var i = 0; i < mounts.length; i++) this.fs.mount.eject(mounts[i]);
+      const mounts = this.fs.mount.getMounts();
+      for (let i = 0; i < mounts.length; i++) this.fs.mount.eject(mounts[i]);
 
       this.log("shutdown", "Writing storage...", 3);
       this.fs.toMem();
 
       this.log("shutdown", "Killing timers...", 3);
-      var timers = setTimeout(function(){}, 0);
-      for(var i = 0; i < timers; i++) clearTimeout(i);
+      const timers = setTimeout(function(){}, 0);
+      for(let i = 0; i < timers; i++) clearTimeout(i);
 
       this.log("shutdown", "Finished.", 3);
 
@@ -938,33 +943,40 @@ const os = (function() {
       async setup() {
         if (!os.fs.exists("/system/machine/taskbar")[1]) return [false, "Machine not prepped, no apps added to the taskbar."];
   
-        var taskbar = document.querySelector(".taskbar");
-        var file = os.fs.readFile("/system/machine/taskbar");
+        const taskbar = document.querySelector(".taskbar");
+        const file = os.fs.readFile("/system/machine/taskbar");
         if (!file[0]) return file;
-        var apps = file[1].split(",");
+        const apps = file[1].split(",");
   
-        var err;
-        for (var i = 0; i < apps.length; i++) {
-          var package = apps[i];
-          var appdata = await os.getAppdata(package);
+        let err;
+        for (let i = 0; i < apps.length; i++) {
+          const pkg = apps[i];
+          let appdata = await os.getAppdata(pkg);
           if (!appdata[0]) {
             err = appdata;
             continue;
           }
           appdata = appdata[1];
           
-          var item = document.createElement("div");
-          item.id = "taskbarItem-" + package;
+          const item = document.createElement("div");
+          item.id = "taskbarItem-" + pkg;
           item.className = "taskbarItem";
-          item.addEventListener("click", ((app) => () => os.startProcess(app))(package));
-          item.addEventListener("contextmenu", ((app) => () => os.taskbar.showOptions(app))(package));
+          item.addEventListener("click", () => os.startProcess(pkg));
+          item.addEventListener("contextmenu", (e) => {
+            if (e.target?.closest(".taskbarItemOptions") != null) {
+              return;
+            }
+
+            os.taskbar.hideOptions();
+            os.taskbar.showOptions(pkg);
+          });
   
-          var img = document.createElement("img");
+          const img = document.createElement("img");
           img.className = "taskbarIcon";
           img.src = appdata.icon;
           item.appendChild(img);
   
-          var itemCount = document.createElement("p");
+          const itemCount = document.createElement("p");
           itemCount.className = "taskbarItemCount";
           itemCount.innerText = "0";
           itemCount.style.display = "none";
@@ -974,37 +986,40 @@ const os = (function() {
   
         return err ?? [true];
       },
-      add(package) {
+      add(pkg) {
         os.fs.createDirs("/system/machine");
-        var files = os.fs.readFile("/system/machine/taskbar");
+        const files = os.fs.readFile("/system/machine/taskbar");
         if (!files[0]) files[1] = "";
 
-        var wr = os.fs.writeFile("/system/machine/taskbar", files[1].length == 0 ? package : files[1] + "," + package);
+        const wr = os.fs.writeFile("/system/machine/taskbar", files[1].length == 0 ? pkg : files[1] + "," + pkg);
         if (!wr[0]) return wr;
 
         return [true];
       },
-      remove(package) {
+      remove(pkg) {
         os.fs.createDirs("/system/machine");
-        var files = os.fs.readFile("/system/machine/taskbar");
+        const files = os.fs.readFile("/system/machine/taskbar");
         if (!files[0]) return [true];
 
-        var wr = os.fs.writeFile("/system/machine/taskbar", files[1].split(",").filter((f) => f != package).join(","));
+        const wr = os.fs.writeFile("/system/machine/taskbar", files[1].split(",").filter((f) => f != pkg).join(","));
         if (!wr[0]) return wr;
 
         return [true];
       },
-      showOptions(package) {
-        var item = document.querySelector("#taskbarItem-" + CSS.escape(package));
+      hideOptions() {
+        optionsListener?.();
+      },
+      showOptions(pkg) {
+        const item = document.querySelector("#taskbarItem-" + CSS.escape(pkg));
 
-        var options = document.createElement("div");
+        const options = document.createElement("div");
         options.className = "taskbarItemOptions";
         options.addEventListener("click", (e) => {
           e.stopPropagation();
         });
         item.appendChild(options);
 
-        var rect = options.getBoundingClientRect();
+        const rect = options.getBoundingClientRect();
         if (rect.x < 8) {
           options.style.left = "calc(50% + " + (8 - rect.x) + "px)";
         }
@@ -1015,42 +1030,82 @@ const os = (function() {
           }
 
           window.removeEventListener("mousedown", optionsListener);
-          item.removeChild(options);
+          options.remove();
           optionsListener = undefined;
         };
         window.addEventListener("mousedown", optionsListener);
 
+        let thisFocusedProcess;
+        let thisFocusedWindow;
+        const tasks = [
+          {icon: "resources/close.svg", text: "Close window", action: () => {
+            os.closeWindowV2(thisFocusedWindow.querySelector(".windowContext"), thisFocusedProcess, false);
+          }},
+          {icon: "resources/close.svg", text: "Kill window", action: () => {
+            os.closeWindowV2(thisFocusedWindow.querySelector(".windowContext"), thisFocusedProcess, true);
+          }}
+        ];
 
-        var processes = os.getProcessesByPackage(package);
-        if (!processes[0] || processes[1].length == 0) {
-          var error = document.createElement("p");
+        const processes = os.getProcessesByPackage(pkg);
+        if (!processes[0] || processes[1].length == 0 || !processes[1].reduce((prev, curr) => prev || curr.windows.length > 0, false)) {
+          const error = document.createElement("p");
           error.className = "error";
           error.innerText = !processes[0] ? "Error!" : "No processes";
           options.appendChild(error);
         } else {
-          var activeLabel = document.createElement("p");
+          const activeLabel = document.createElement("p");
           activeLabel.innerText = "Windows";
           options.appendChild(activeLabel);
 
-          for (var i = 0; i < processes[1].length; i++) {
-            var process = processes[1][i];
+          for (let i = 0; i < processes[1].length; i++) {
+            const process = processes[1][i];
 
-            for (var x = 0; x < process.windows.length; x++) {
-              var win = process.windows[x];
+            for (let x = 0; x < process.windows.length; x++) {
+              const win = process.windows[x];
+              if (focusedWindow == win) {
+                thisFocusedProcess = process;
+                thisFocusedWindow = win;
+              }
               
-              var box = document.createElement("div");
+              const box = document.createElement("div");
               box.className = "taskbarItemProcess " + (focusedWindow == win ? "focused" : "");
-              box.addEventListener("click", ((win) => () => {
+              box.addEventListener("click", () => {
                 os.focusWindow(win);
-              })(win));
+              });
               options.appendChild(box);
 
-              var boxIcon = document.createElement("img");
+              const boxIcon = document.createElement("img");
               boxIcon.src = process.appdata.icon;
               box.appendChild(boxIcon);
 
-              var boxName = document.createElement("p");
+              const boxName = document.createElement("p");
               boxName.innerText = win.querySelector(".windowTop p").innerText;
+              box.appendChild(boxName);
+            }
+          }
+          
+          if (thisFocusedProcess) {
+            const tasksLabel = document.createElement("p");
+            tasksLabel.innerText = "Tasks";
+            options.appendChild(tasksLabel);
+  
+            for (let i = 0; i < tasks.length; i++) {
+              const task = tasks[i];
+  
+              const box = document.createElement("div");
+              box.className = "taskbarItemProcess";
+              box.addEventListener("click", () => {
+                this.hideOptions();
+                task.action();
+              });
+              options.appendChild(box);
+  
+              const boxIcon = document.createElement("img");
+              boxIcon.src = task.icon;
+              box.appendChild(boxIcon);
+  
+              const boxName = document.createElement("p");
+              boxName.innerText = task.text;
               box.appendChild(boxName);
             }
           }
@@ -1066,30 +1121,30 @@ const os = (function() {
       parse(text) {
         return eval(text);
       },
-      run(package, id) {
+      run(pkg, id) {
         if (!os.fs.exists("/system/svc.registry")[1]) return false;
 
-        var svc = os.fs.readFile("/system/svc.registry")[1];
-        var registry = os.fs.parseRegistry(svc)[1];
-        for (var i = 0; i < registry.length; i++) {
+        const svc = os.fs.readFile("/system/svc.registry")[1];
+        const registry = os.fs.parseRegistry(svc)[1];
+        for (let i = 0; i < registry.length; i++) {
           if (registry[i][2] != id) continue;
     
-          var file = os.fs.readFile(registry[i][0]);
+          let file = os.fs.readFile(registry[i][0]);
           if (!file[0]) continue;
 
           file = file[1].replaceAll("\r\n", "\n");
           if (!file.includes("\nIE_RUN:\n")) continue;
           file = file.substring(file.indexOf("\nIE_RUN:\n") + 9);
     
-          var name = registry[i][1];
+          const name = registry[i][1];
           this.started.push(id);
           try {
-            os.log("os-services", "<" + package + ":" + name + "> Running service...", 3);
-            var result = eval("const __package__=" + JSON.stringify(package) + ";const __id__=" + JSON.stringify(id) + ";" + file);
-            os.log("os-services", "<" + package + ":" + name + "> Service is running!", 3);
+            os.log("os-services", "<" + pkg + ":" + name + "> Running service...", 3);
+            /*const result = */eval("const __package__=" + JSON.stringify(pkg) + ";const __id__=" + JSON.stringify(id) + ";" + file);
+            os.log("os-services", "<" + pkg + ":" + name + "> Service is running!", 3);
             //console.log(result);
           } catch (ex) {
-            os.log("os-services", "<" + package + ":" + name + "> Error: " + ex, 2);
+            os.log("os-services", "<" + pkg + ":" + name + "> Error: " + ex, 2);
           }
           return true;
         }
@@ -1109,23 +1164,23 @@ const os = (function() {
     settings: {
       load() {
         if (os.fs.exists("/system/machine/settings")[1]) {
-          var s = os.fs.readFile("/system/machine/settings")[1].split("\n");
-          for (var i = 0; i < s.length; i++) {
-            var prop = s[i].substring(0, s[i].indexOf("="));
-            var val = s[i].substring(s[i].indexOf("=") + 1);
+          const s = os.fs.readFile("/system/machine/settings")[1].split("\n");
+          for (let i = 0; i < s.length; i++) {
+            const prop = s[i].substring(0, s[i].indexOf("="));
+            const val = s[i].substring(s[i].indexOf("=") + 1);
             settings[prop] = val;
           }
         }
       },
       update(prop, val) {
         settings[prop] = val;
-        var txt = [];
-        var app = true;
+        const txt = [];
+        let app = true;
         if (os.fs.exists("/system/machine/settings")[1]) {
-          var s = os.fs.readFile("/system/machine/settings")[1].split("\n");
-          for (var i = 0; i < s.length; i++) {
-            var pprop = s[i].substring(0, s[i].indexOf("="));
-            var pval = s[i].substring(s[i].indexOf("=") + 1);
+          const s = os.fs.readFile("/system/machine/settings")[1].split("\n");
+          for (let i = 0; i < s.length; i++) {
+            const pprop = s[i].substring(0, s[i].indexOf("="));
+            const pval = s[i].substring(s[i].indexOf("=") + 1);
             if (pprop == prop) {
               app = false;
               txt.push(prop + "=" + val);
@@ -1143,34 +1198,34 @@ const os = (function() {
     },
     notifications: {
       show(title, body, onClick, icon) {
-        var panel = document.querySelector(".notifications");
-        var not = document.createElement("p");
+        const panel = document.querySelector(".notifications");
+        const not = document.createElement("p");
         not.innerText = title;
-        var start = 0;
-        var end = 0;
-        var mm = (e) => end = e.pageY;
+        let start = 0;
+        let end = 0;
+        const mm = (e) => end = e.pageY;
         not.onmousedown = (e) => {
           not.classList.add("select");
           start = e.pageY;
           end = e.pageY;
           window.addEventListener("mousemove", mm);
         };
-        var hh = () => {
+        const hh = () => {
           not.classList.remove("select");
           window.removeEventListener("mousemove", mm);
           if (start - end > 60) not.classList.add("full");
           else if (start - end < -60) not.classList.remove("full");
-        }
+        };
         window.addEventListener("mouseup", hh);
         not.onclick = () => {
           onClick?.({title, body, onClick, icon, dismiss: () => {
             not.onclick = null;
             window.removeEventListener("mouseup", hh);
             not.classList.add("disappear");
-            setTimeout(() => panel.removeChild(not), 200);
+            setTimeout(() => not.remove(), 200);
           }});
         };
-        var bod = document.createElement("span");
+        const bod = document.createElement("span");
         bod.innerText = " " + body;
         not.appendChild(bod);
 
@@ -1181,7 +1236,7 @@ const os = (function() {
           not.classList.add("disappear");
           setTimeout(() => {
             try {
-              panel.removeChild(not)
+              not.remove();
             } catch {}
           }, 200);
         }, 10000);
@@ -1189,11 +1244,11 @@ const os = (function() {
     },
     operation: {
       async download(url, path) {
-        var str = await this.downloadBase64(url);
+        const str = await this.downloadBase64(url);
         if (!str[0]) return str;
-        var parent = os.fs.getParent(path);
+        const parent = os.fs.getParent(path);
         if (!parent[0]) return parent;
-        var dirs = os.fs.createDirs(parent[1]);
+        const dirs = os.fs.createDirs(parent[1]);
         if (!dirs[0]) return dirs;
         return os.fs.writeFile(path, str[1], true);
       },
@@ -1213,25 +1268,25 @@ const os = (function() {
           });
         };
   
-        var err;
-        var data = await imageUrlToBase64(url).catch((e) => err = e);
+        let err;
+        const data = await imageUrlToBase64(url).catch((e) => err = e);
         if (err) return [false, err];
         return [true, data.substring(data.indexOf(",") + 1)];
       },
       async downloadString(url) {
-        var err;
-        var data = await fetch(url).then((t) => t.text()).catch((e) => err = e);
+        let err;
+        const data = await fetch(url).then((t) => t.text()).catch((e) => err = e);
         if (err) return [false, err];
         return [true, data];
       },
       async downloadJSON(url) {
-        var err;
-        var data = await fetch(url).then((t) => t.json()).catch((e) => err = e);
+        let err;
+        const data = await fetch(url).then((t) => t.json()).catch((e) => err = e);
         if (err) return [false, err];
         return [true, data];
       }
     },
-    fs: newFilesystem("Flexan.NET;onlinepc-mem", (...args) => os.log(...args))
+    fs: newFilesystem("Flexan.NET;onlinepc-mem", "IndexedDB", (...args) => os.log(...args))
   };
 })();
 
@@ -1243,9 +1298,9 @@ window.addEventListener("keydown", async (e) => {
   if (e.key == ":" && e.ctrlKey && e.shiftKey) console.log("Opening recovery terminal:", await os.startProcess("me.flexan.terminal", [], {id: "system,"}));
 });
 
-var shownRamWarning = false;
+let shownRamWarning = false;
 (async function() {
-  var tryLog = (id, trigger, result) => {
+  const tryLog = (id, trigger, result) => {
     if (!result[0]) {
       os.log("os-trylogger", "<" + id + ":" + trigger + "> " + result[1], 2);
       return;
@@ -1253,17 +1308,17 @@ var shownRamWarning = false;
     return result[1];
   };
 
-  var entryId = "os-entry";
+  const entryId = "os-entry";
   
   os.log(entryId, "Loading...", 3);
-  tryLog(entryId, "fs-prep", os.fs.prep());
-  tryLog(entryId, "fs-tolocal", os.fs.toLocal());
+  tryLog(entryId, "fs-prep", await os.fs.prep());
+  tryLog(entryId, "fs-tolocal", await os.fs.toLocal());
 
   // if (!os.fs.exists("/apps/me.flexan.terminal/_appdata.json")[1]) {
   //   os.log(entryId, "Recovering terminal...", 3);
   //   os.fs.createDirs("/apps/me.flexan.terminal");
   //   os.fs.writeFile("/apps/me.flexan.terminal/_appdata.json", `{"name":"Recovery","package":"me.flexan.terminal","executor":"start.js","hasWindow":true}`);
-  //   os.fs.writeFile("/apps/me.flexan.terminal/start.js", `(async ()=>{var m=(p)=>document.createElement(p);var c=m("pre");c.innerText="Start typing, press BACKSPACE to clear input and enter to run\\nSYS: ";document.body.appendChild(c);var i;var z=()=>{i=m("span");c.appendChild(i)};z();var d="";addEventListener("keydown",async (e)=>{if(e.key=="Backspace")i.innerText=d="";if(e.key=="Enter"){z();var a=d.match(/[^\\s"']+|"([^"]*)"|'([^']*)'/g);var y=a.shift();d="";try{if(y=="host"&&a.length>0)await system.operation.submit([0,a[0]]);else if(y=="taskbar"&&a.length>1)await system.operation.submit([a[0]=="remove"?3:2,a[1]]);else if(y=="update"){await system.operation.submit([0x01]);i.innerText="\\nFinished"}else i.innerText="\\nNot found"}catch(r){i.innerText="\\nError: "+r};i.innerText+="\\nSYS: ";z()};if(e.key.length>1||e.ctrlKey)return;d+=e.key;i.innerText=d})})()`);
+  //   os.fs.writeFile("/apps/me.flexan.terminal/start.js", `(async ()=>{let m=(p)=>document.createElement(p);let c=m("pre");c.innerText="Start typing, press BACKSPACE to clear input and enter to run\\nSYS: ";document.body.appendChild(c);let i;let z=()=>{i=m("span");c.appendChild(i)};z();let d="";addEventListener("keydown",async (e)=>{if(e.key=="Backspace")i.innerText=d="";if(e.key=="Enter"){z();let a=d.match(/[^\\s"']+|"([^"]*)"|'([^']*)'/g);let y=a.shift();d="";try{if(y=="host"&&a.length>0)await system.operation.submit([0,a[0]]);else if(y=="taskbar"&&a.length>1)await system.operation.submit([a[0]=="remove"?3:2,a[1]]);else if(y=="update"){await system.operation.submit([0x01]);i.innerText="\\nFinished"}else i.innerText="\\nNot found"}catch(r){i.innerText="\\nError: "+r};i.innerText+="\\nSYS: ";z()};if(e.key.length>1||e.ctrlKey)return;d+=e.key;i.innerText=d})})()`);
   // }
 
   // check for corrupt update
@@ -1274,22 +1329,27 @@ var shownRamWarning = false;
 
   // ram clock
   if (window.performance && window.performance.memory && os.settings.get("SHOW_RAM_WARNING") != "false") {
-    //if (performance.memory.usedJSHeapSize / 1048576 > 20) shownRamWarning = true;
     setInterval(() => os.memory.updateRamUsage(performance.memory.usedJSHeapSize / 1048576), 250);
   }
-  //setInterval(() => shownRamWarning = false, 300000);
+
+  // taskbar clock
+  setInterval(() => {
+    const now = new Date();
+    document.querySelector("#taskbarTime").innerText = new Intl.DateTimeFormat("en-US", {hour: "numeric", minute: "2-digit", hour12: true}).format(now);
+    document.querySelector("#taskbarDate").innerText = new Intl.DateTimeFormat("en-US", {day: "2-digit", month: "2-digit", year: "numeric"}).format(now);
+  }, 100);
   
   os.initProcessListener();
   tryLog(entryId, "fs-taskbar", await os.taskbar.setup());
 
   if (os.fs.exists("/system/svc.registry")[1]) {
     os.log(entryId, "Starting services...", 3);
-    var svc = os.fs.readFile("/system/svc.registry")[1];
-    var registry = os.fs.parseRegistry(svc)[1];
-    for (var i = 0; i < registry.length; i++) {
+    const svc = os.fs.readFile("/system/svc.registry")[1];
+    const registry = os.fs.parseRegistry(svc)[1];
+    for (let i = 0; i < registry.length; i++) {
       os.log("os-services", "<" + entryId + ":" + registry[i][1] + "> Starting service...", 3);
 
-      var file = os.fs.readFile(registry[i][0]);
+      let file = os.fs.readFile(registry[i][0]);
       if (!file[0]) {
         os.log("os-services", "<" + entryId + ":" + registry[i][1] + "> Error: " + file[1], 2);
         continue;
@@ -1298,7 +1358,7 @@ var shownRamWarning = false;
       if (file.includes("\nIE_RUN:\n")) file = file.substring(0, file.indexOf("\nIE_RUN:\n"));
 
       try {
-        var result = eval(file);
+        /*const result = */eval(file);
         os.log("os-services", "<" + entryId + ":" + registry[i][1] + "> Service started!", 3);
         //console.log(result);
       } catch (ex) {
@@ -1309,8 +1369,8 @@ var shownRamWarning = false;
 
   if (os.fs.exists("/cfg/startup/services")[1]) {
     os.log(entryId, "Running startup services...", 3);
-    var svc = os.fs.readFile("/cfg/startup/services")[1].split("\n");
-    for (var i = 0; i < svc.length; i++) {
+    const svc = os.fs.readFile("/cfg/startup/services")[1].split("\n");
+    for (let i = 0; i < svc.length; i++) {
       if (svc[i].trim() == "") continue;
       os.services.run("system,", svc[i].trim());
     }

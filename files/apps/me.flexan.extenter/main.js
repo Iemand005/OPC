@@ -9,7 +9,7 @@
   }
   
   var currentTab;
-  var package = "me.yourname.projectname";
+  var pkg = "me.yourname.projectname";
   var path = "/appdata/.extenter/projects/me.yourname.projectname";
   var files = {};
   var tabInfo = {};
@@ -148,11 +148,11 @@
       ctrlR = Date.now();
       e.preventDefault();
       await saveProject();
-      if (!(await system.operation.obtainAppAccess(package))) return;
-      await system.fs.deletePath("/apps/" + package);
-      await system.fs.copy(path, "/apps/" + package);
-      if (!(await system.fs.exists(path + "/icon.png"))) await system.fs.resource.copyToOutside("icon.png", "/apps/" + package + "/icon.png");
-      await system.process.start(package, []);
+      if (!(await system.operation.obtainAppAccess(pkg))) return;
+      await system.fs.deletePath("/apps/" + pkg);
+      await system.fs.copy(path, "/apps/" + pkg);
+      if (!(await system.fs.exists(path + "/icon.png"))) await system.fs.resource.copyToOutside("icon.png", "/apps/" + pkg + "/icon.png");
+      await system.process.start(pkg, []);
       return;
     }
     if (e.ctrlKey && (e.key == "a" || e.key == "c")) return;
@@ -292,7 +292,7 @@
     });
   }
 
-  await system.window.setTitle("Unnamed project (" + package + ") - extenter");
+  await system.window.setTitle("Unnamed project (" + pkg + ") - extenter");
 
   // appdata tab
   currentTab = "_appdata.json";
@@ -308,17 +308,17 @@
     try {
       var o = JSON.parse(document.querySelector(".editor").value);
 
-      if (typeof o.package == "undefined") return show("Invalid data: Missing 'package' (string)");
-      if (typeof o.package != "string") return show("Invalid data: 'package' must be of type string");
-      if (o.package.includes(",") || o.package.includes("$") || o.package.includes(":") || o.package.includes("\"")) return show("Invalid data: 'package' contains invalid characters");
-      package = o.package;
-      path = "/appdata/.extenter/projects/" + package;
+      if (typeof o["package"] == "undefined") return show("Invalid data: Missing 'package' (string)");
+      if (typeof o["package"] != "string") return show("Invalid data: 'package' must be of type string");
+      if (o["package"].includes(",") || o["package"].includes("$") || o["package"].includes(":") || o["package"].includes("\"")) return show("Invalid data: 'package' contains invalid characters");
+      pkg = o["package"];
+      path = "/appdata/.extenter/projects/" + pkg;
 
       if (typeof o.name == "undefined") return show("Invalid data: Missing 'name' (string)");
       if (typeof o.name != "string") return show("Invalid data: 'name' must be of type string");
       if (o.name.trim() == "") return show("Invalid data: 'name' cannot be empty");
 
-      await system.window.setTitle(o.name + " (" + package + ") - extenter");
+      await system.window.setTitle(o.name + " (" + pkg + ") - extenter");
       
       if (typeof o.author != "undefined" && typeof o.author != "string") return show("Invalid data: 'author' must be of type string");
       

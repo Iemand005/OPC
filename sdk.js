@@ -1,30 +1,30 @@
 const system = (function() {
-  var firstWindowId = -1;
-  var referenceOwnPackage;
+  let firstWindowId = -1;
+  let referenceOwnPackage;
   window.addEventListener("message", (e) => {
-    var type = e.data.type;
-    var args = e.data.args;
+    const type = e.data.type;
+    const args = e.data.args;
   
     if (type == "startScript") {
       if (system) system.window.id = args[1];
       else firstWindowId = args[1];
       referenceOwnPackage = args[2];
-      var script = document.createElement("script");
+      const script = document.createElement("script");
       script.innerHTML = atob(args[0]);
       document.head.appendChild(script);
       return;
     }
   }, false);
   
-  var addWin = () => {
-    window.addEventListener("focus", async (e) => await system.window.grabFocus());
+  const addWin = () => {
+    window.addEventListener("focus", async () => await system.window.grabFocus());
   };
   addWin();
   
-  var init = () => {
+  const init = () => {
     window.addEventListener("message", async (e) => {
-      var type = e.data.type;
-      var args = [...e.data.args];
+      const type = e.data.type;
+      const args = [...e.data.args];
     
       if (type == "updateProgress") {
         system.events.onupdateprogress?.(args[0], args[1]);
@@ -41,7 +41,7 @@ const system = (function() {
       if (type == "windowExit") {
         if (system.events.onclose) await system.events.onclose(args[0]);
         else await system.window.close();
-        if (!system.options.runInBackground && await system.window.getState() == 0) await system.process.this.kill();
+        if (!system.options.runInBackground && (await system.window.getState()) == 0) await system.process.this.kill();
         return;
       }
     }, false);
@@ -51,14 +51,14 @@ const system = (function() {
   init();
   
   return (function() {
-    var send = (type, action, ...args) => {
+    const send = (type, action, ...args) => {
       return new Promise((rs, rj) => {
-        var id = Math.floor(Math.random() * 100000000);
-        var listener = (e) => {
-          var type = e.data.type;
-          var args = [...e.data.args];
+        const id = Math.floor(Math.random() * 100000000);
+        const listener = (e) => {
+          const type = e.data.type;
+          const args = [...e.data.args];
   
-          var success = type == "apiResponse";
+          const success = type == "apiResponse";
           if (!success && type != "apiFailure") return;
           if (args.shift() != id) return;
           window.removeEventListener("message", listener);
@@ -73,18 +73,18 @@ const system = (function() {
         parent.postMessage({id, type, action, args}, "*");
       });
     };
-    var sendo = (action, ...args) => send("operation", action, ...args);
-    var sendw = (action, ...args) => send("window", action, ...args);
-    var sendp = (action, ...args) => send("process", action, ...args);
-    var sendfs = (action, ...args) => send("fs", action, ...args);
+    const sendo = (action, ...args) => send("operation", action, ...args);
+    const sendw = (action, ...args) => send("window", action, ...args);
+    const sendp = (action, ...args) => send("process", action, ...args);
+    const sendfs = (action, ...args) => send("fs", action, ...args);
     
-    var newProcess = (id, package) => {
+    const newProcess = (id, pkg) => {
       return {
         async getId() {
           return id ?? (id = (await sendp("5", id))[0]);
         },
         async getPackage() {
-          return package ?? (package = (await sendp("6", id))[0]);
+          return pkg ?? (pkg = (await sendp("6", id))[0]);
         },
         async kill() {
           return (await sendp("0", id))[0];
@@ -107,15 +107,15 @@ const system = (function() {
       util: {
         loadFile() {
           return new Promise((s, j) => {
-            var input = document.createElement("input");
+            const input = document.createElement("input");
             input.type = "file";
-            var dt = new DataTransfer();
+            const dt = new DataTransfer();
             dt.items.add(new File([""], "test.txt", {type: "text/plain", lastModified: new Date()}));
             input.files = dt.files;
             input.onchange = (e) => {
-              var file = e.target.files[0];
+              const file = e.target.files[0];
               if (!file) return s(null);
-              var reader = new FileReader();
+              const reader = new FileReader();
               reader.readAsDataURL(file);
               reader.onload = () => s(atob(reader.result.substring(reader.result.indexOf(",") + 1)));
               reader.onerror = j;
@@ -124,13 +124,13 @@ const system = (function() {
           });
         },
         saveFile(filename, data) {
-          var file = new Blob([data], {type: "application/octet-stream"});
+          const file = new Blob([data], {type: "application/octet-stream"});
           if (window.navigator.msSaveOrOpenBlob) {
             window.navigator.msSaveOrOpenBlob(file, filename);
             return;
           }
-          var url = URL.createObjectURL(file);
-          var a = document.createElement("a");
+          const url = URL.createObjectURL(file);
+          const a = document.createElement("a");
           a.href = url;
           a.download = filename;
           document.body.appendChild(a);
@@ -157,8 +157,8 @@ const system = (function() {
         async obtainAppAccess(forPackage) {
           return (await sendo("1", forPackage))[0];
         },
-        async getAppName(package) {
-          return (await sendo("2", package))[0];
+        async getAppName(pkg) {
+          return (await sendo("2", pkg))[0];
         },
         async submit(args) {
           return (await sendo("3", ...args))[0];
@@ -228,21 +228,21 @@ const system = (function() {
           init();
         },
         async loadStyles(relativePath) {
-          var style = document.createElement("style");
+          const style = document.createElement("style");
           style.innerHTML = await system.fs.resource.readString(relativePath);
           document.head.appendChild(style);
         },
         async loadScript(relativePath) {
-          var script = document.createElement("script");
+          const script = document.createElement("script");
           script.innerHTML = await system.fs.resource.readString(relativePath);
           document.head.appendChild(script);
         },
         async resolveResources() {
-          var l = document.querySelectorAll("*");
-          for (var i = 0; i < l.length; i++) {
-            var ff = l[i].getAttribute("resfile");
+          const l = document.querySelectorAll("*");
+          for (let i = 0; i < l.length; i++) {
+            const ff = l[i].getAttribute("resfile");
             if (!ff) continue;
-            var comma = ff.indexOf(",");
+            const comma = ff.indexOf(",");
             l[i].setAttribute(ff.substring(0, comma), URL.createObjectURL(await system.fs.resource.readBlob(ff.substring(comma + 1))));
           }
         },
@@ -272,11 +272,11 @@ const system = (function() {
       },
       process: { // processes are documented in `os.js` as `<Process>`
         this: newProcess(undefined),
-        async start(package, args) {
-          return newProcess(...(await sendp("1", package, args)));
+        async start(pkg, args) {
+          return newProcess(...(await sendp("1", pkg, args)));
         },
-        async startAndWait(package, args) {
-          return (await sendp("4", package, args))[0];
+        async startAndWait(pkg, args) {
+          return (await sendp("4", pkg, args))[0];
         },
         async getAll() {
           return (await sendp("3"))[0].map((p) => newProcess(p[0], p[1]));
@@ -317,15 +317,15 @@ const system = (function() {
           return (await sendfs("b", path))[0];
         },
         async getPath(path) {
-          var n = decodeURIComponent(new URL("https://example.com/" + encodeURI(path)).pathname.replace(/\/+(?=\/)/g,'').replace(/\/+$/, ""));
+          const n = decodeURIComponent(new URL("https://example.com/" + encodeURI(path)).pathname.replace(/\/+(?=\/)/g,'').replace(/\/+$/, ""));
           return n.length == 0 ? "/" : n;
-          return (await sendfs("3", path))[0];
+          // return (await sendfs("3", path))[0];
         },
         async exists(path) {
           return (await sendfs("4", path))[0];
         },
         async getParent(path) {
-          var pp = await this.getPath(path);
+          const pp = await this.getPath(path);
           return pp.substring(0, pp.lastIndexOf("/") + 1);
         },
         async isDir(path) {
@@ -359,12 +359,12 @@ const system = (function() {
           if (!(await this.exists(oldpath))) return 0;
           if (await this.isDir(oldpath)) {
             await this.createPath(newpath);
-            var add = 0;
-            var files = await this.listFiles(oldpath);
-            for (var i = 0; i < files.length; i++) await this.writeBase64(newpath + "/" + files[i], await this.readBase64(oldpath + "/" + files[i]));
+            let add = 0;
+            const files = await this.listFiles(oldpath);
+            for (let i = 0; i < files.length; i++) await this.writeBase64(newpath + "/" + files[i], await this.readBase64(oldpath + "/" + files[i]));
             add += files.length;
-            var dirs = await this.listDirectories(oldpath);
-            for (var i = 0; i < dirs.length; i++) add += await this.copy(oldpath + "/" + dirs[i], newpath + "/" + dirs[i]);
+            const dirs = await this.listDirectories(oldpath);
+            for (let i = 0; i < dirs.length; i++) add += await this.copy(oldpath + "/" + dirs[i], newpath + "/" + dirs[i]);
             return add;
           }
           await this.writeBase64(newpath, await this.readBase64(oldpath));
